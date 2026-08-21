@@ -1,0 +1,7 @@
+{
+  "name": "hendy-worker",
+  "main": "src/index.js",
+  "dependencies": {
+    "@cloudflare/puppeteer": "^0.0.5"
+  }
+}
