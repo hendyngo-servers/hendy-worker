@@ -40,10 +40,21 @@ export default {
         };
 
         try {
-          log(`Khởi tạo tab ảo ngầm V7.1.5 (Proxy: ${proxyUrl || 'Mặc định'})...`);
+          log(`Khởi tạo tab ảo ngầm (Chống phát hiện Bot & Mobile Emulation)...`);
+          
           let launchOptions = env.MYBROWSER || { headless: true };
+          let defaultArgs = [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox', 
+            '--disable-infobars',
+            '--window-size=412,915',
+            '--disable-blink-features=AutomationControlled' // FIX QUAN TRỌNG: Qua mặt hệ thống phát hiện bot của nhà cái
+          ];
+
           if (proxyUrl) {
-            launchOptions.args = [`--proxy-server=${proxyUrl}`, '--no-sandbox', '--disable-setuid-sandbox'];
+            launchOptions.args = [`--proxy-server=${proxyUrl}`, ...defaultArgs];
+          } else {
+            launchOptions.args = defaultArgs;
           }
 
           browser = await puppeteer.launch(launchOptions);
@@ -51,10 +62,17 @@ export default {
 
           page.on('console', msg => log(`[V7.1.5 Console] ${msg.text()}`));
 
+          // Cấu hình chuẩn Pixel 7 Pro Mobile Mode
           await page.setUserAgent('Mozilla/5.0 (Linux; Android 13; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36');
-          await page.setViewport({ width: 412, height: 915, isMobile: true, hasTouch: true });
+          await page.setViewport({ width: 412, height: 915, isMobile: true, hasTouch: true, deviceScaleFactor: 2.62 });
 
-          // Tiêm trọn vẹn bộ cấu hình và logic V7.1.5 vào document-start của tab ảo
+          // Xóa vết tích webdriver trước khi trang tải
+          await page.evaluateOnNewDocument(() => {
+              Object.defineProperty(navigator, 'webdriver', { get: () => false });
+              window.navigator.chrome = { runtime: {} };
+              Object.defineProperty(navigator, 'languages', { get: () => ['vi-VN', 'vi', 'en-US', 'en'] });
+          });
+
           await page.evaluateOnNewDocument((user, socketUrl) => {
               window.localStorage.setItem('hendy_name', user);
               window.localStorage.setItem('mc_ws_url', socketUrl);
@@ -79,7 +97,7 @@ export default {
           await page.goto(link_live, { waitUntil: "networkidle0", timeout: 35000 });
 
           if (password) {
-            log(`Thực hiện Auto-Login cho tài khoản...`);
+            log(`Thực hiện Auto-Login...`);
             await page.evaluate((u, p) => {
               const inputs = document.querySelectorAll('input');
               for (let input of inputs) {
@@ -108,7 +126,7 @@ export default {
           }
 
           log(`Chụp Live Preview tình trạng Tab ẩn...`);
-          const screenshotBuffer = await page.screenshot({ encoding: "base64", type: "jpeg", quality: 60 });
+          const screenshotBuffer = await page.screenshot({ encoding: "base64", type: "jpeg", quality: 70 });
           finalScreenshot = `data:image/jpeg;base64,${screenshotBuffer}`;
 
           await browser.close();
