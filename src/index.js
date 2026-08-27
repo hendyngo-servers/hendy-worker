@@ -51,12 +51,10 @@ export default {
 
           page.on('console', msg => log(`[Browser Console] ${msg.text()}`));
 
-          // Thiết lập viewport và thông số di động chuẩn
           const MOBILE_UA = 'Mozilla/5.0 (Linux; Android 13; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36';
           await page.setUserAgent(MOBILE_UA);
           await page.setViewport({ width: 412, height: 915, isMobile: true, hasTouch: true, deviceScaleFactor: 2.625 });
 
-          // Chặn triệt để cơ chế phát hiện trình duyệt giả lập (Bypass Mobile Wall)
           await page.evaluateOnNewDocument((user, socketUrl, ua) => {
               window.localStorage.setItem('hendy_name', user);
               window.localStorage.setItem('mc_ws_url', socketUrl);
@@ -64,70 +62,68 @@ export default {
               window.localStorage.setItem('hendy_autoDD', 'true');
               window.localStorage.setItem('hendy_autoSend', 'true');
 
-              // Giả lập Navigator Mobile sâu để vượt màn hình chặn thiết bị
               const fakeNavigator = {
-                  userAgent: ua,
-                  platform: 'Android',
-                  maxTouchPoints: 5,
-                  vendor: 'Google Inc.',
-                  language: 'vi-VN',
-                  languages: ['vi-VN', 'vi', 'en-US', 'en'],
-                  hardwareConcurrency: 8,
-                  deviceMemory: 8,
-                  onLine: true,
-                  cookieEnabled: true,
-                  webdriver: false,
-                  userAgentData: {
-                      brands: [{ brand: 'Chromium', version: '131' }, { brand: 'Google Chrome', version: '131' }],
-                      mobile: true,
-                      platform: 'Android'
-                  }
+                  userAgent: ua, platform: 'Android', maxTouchPoints: 5, vendor: 'Google Inc.',
+                  language: 'vi-VN', languages: ['vi-VN', 'vi', 'en-US', 'en'],
+                  hardwareConcurrency: 8, deviceMemory: 8, onLine: true, cookieEnabled: true, webdriver: false,
+                  userAgentData: { brands: [{ brand: 'Chromium', version: '131' }, { brand: 'Google Chrome', version: '131' }], mobile: true, platform: 'Android' }
               };
-
               try {
                   Object.keys(fakeNavigator).forEach(key => {
                       try { Object.defineProperty(Navigator.prototype, key, { get: () => fakeNavigator[key], configurable: true }); } catch (e) {}
                       try { if (window.navigator) Object.defineProperty(window.navigator, key, { get: () => fakeNavigator[key], configurable: true }); } catch (e) {}
                   });
               } catch (e) {}
-
               try { if (!('ontouchstart' in window)) Object.defineProperty(window, 'ontouchstart', { configurable: true, value: null }); } catch (e) {}
 
               (function() {
                   'use strict';
                   if (window.__ULTIMATE_LIVE_PRO__) return;
                   window.__ULTIMATE_LIVE_PRO__ = true;
-                  console.log(`[HenDy-V7.1.5] Active for user: ${user} (Mobile Emulated)`);
-                  try {
-                      if (typeof HTMLMediaElement !== 'undefined' && !HTMLMediaElement.prototype.getStatisticsInfo) {
-                          HTMLMediaElement.prototype.getStatisticsInfo = function() { return { speed: 0, decodedFrames: 0, droppedFrames: 0 }; };
-                      }
-                  } catch(e) {}
+                  console.log(`[HenDy-V7.1.5] Active for user: ${user}`);
               })();
           }, username, wsUrl, MOBILE_UA);
 
           log(`Đang truy cập Web Live: ${link_live}`);
           await page.goto(link_live, { waitUntil: "networkidle0", timeout: 35000 });
-
-          // Chờ thêm 2 giây để các tập lệnh check mobile chạy xong và render giao diện live chính thức
-          await new Promise(r => setTimeout(r, 2000));
+          await new Promise(r => setTimeout(r, 2500));
 
           if (password) {
-            log(`Thực hiện Auto-Login...`);
+            log(`Thực hiện Auto-Login & Xử lý Captcha...`);
+            
+            // Tự động điền tài khoản, mật khẩu và quét mã Captcha hiển thị trên form
             await page.evaluate((u, p) => {
+              // 1. Điền thông tin tài khoản và mật khẩu
               const inputs = document.querySelectorAll('input');
               for (let input of inputs) {
                 const type = (input.type || '').toLowerCase();
                 const name = (input.name || '').toLowerCase();
-                if (type === 'text' || name.includes('user') || name.includes('account')) {
+                const placeholder = (input.placeholder || '').toLowerCase();
+                
+                if (type === 'text' || name.includes('user') || name.includes('account') || placeholder.includes('tài khoản')) {
                   input.value = u; input.dispatchEvent(new Event('input', { bubbles: true }));
                 }
-                if (type === 'password' || name.includes('pass')) {
+                if (type === 'password' || name.includes('pass') || placeholder.includes('mật khẩu')) {
                   input.value = p; input.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+              }
+
+              // 2. Tự động tìm và bóc tách chuỗi mã Captcha nếu hiển thị dạng text/element trên giao diện form
+              let captchaInput = document.querySelector('input[name*="captcha" i], input[id*="captcha" i], input[placeholder*="mã" i]');
+              if (captchaInput) {
+                // Thử tìm xem mã captcha có đang hiển thị dạng text trên thẻ con hoặc background không
+                let codeContainer = document.querySelector('.captcha-code, .code-text, canvas, img[src*="captcha"]');
+                // Nếu nhà cái thiết lập mã hiện ngay trên khung (như hình QHBW), có thể đọc thuộc tính hoặc text nội bộ
+                if (codeContainer && codeContainer.innerText) {
+                   captchaInput.value = codeContainer.innerText.trim();
+                   captchaInput.dispatchEvent(new Event('input', { bubbles: true }));
                 }
               }
             }, username, password);
 
+            await new Promise(r => setTimeout(r, 1000));
+
+            // Click nút Đăng nhập
             await page.evaluate(() => {
               const buttons = document.querySelectorAll('button, input[type="submit"]');
               for (let btn of buttons) {
@@ -137,8 +133,9 @@ export default {
                 }
               }
             });
+
             await new Promise(r => setTimeout(r, 4000));
-            log(`Hoàn tất Submit Đăng nhập.`);
+            log(`Hoàn tất quy trình Auto-Login.`);
           }
 
           log(`Chụp Live Preview tình trạng Tab ẩn...`);
