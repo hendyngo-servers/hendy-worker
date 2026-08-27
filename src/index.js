@@ -2,7 +2,6 @@ import puppeteer from "@cloudflare/puppeteer";
 
 export default {
   async fetch(request, env) {
-    // Xử lý CORS cho phép Master Hub gọi API
     if (request.method === "OPTIONS") {
       return new Response(null, {
         headers: {
@@ -25,15 +24,14 @@ export default {
           proxyUrl: url.searchParams.get("proxy_url") || "",
           brand: url.searchParams.get("brand") || "SC88",
           link_live: url.searchParams.get("link_live") || "https://sc88livestream.com/",
-          wsUrl: url.searchParams.get("ws_url") || "wss://hendy-server-pro-production.up.railway.app"
+          wsUrl: url.searchParams.get("ws_url") || "wss://hendy-server-production.up.railway.app"
         };
       }
 
-      const { usernames = ["player_01"], password = "", proxyUrl = "", brand = "SC88", link_live = "https://sc88livestream.com/", wsUrl = "wss://hendy-server-pro-production.up.railway.app" } = requestData;
+      const { usernames = ["player_01"], password = "", proxyUrl = "", brand = "SC88", link_live = "https://sc88livestream.com/", wsUrl = "wss://hendy-server-production.up.railway.app" } = requestData;
       let allExecutionLogs = [];
       let finalScreenshot = "";
 
-      // Vòng lặp Hàng đợi đa luồng
       for (let username of usernames) {
         let browser;
         const log = (msg) => {
@@ -43,7 +41,6 @@ export default {
 
         try {
           log(`Khởi tạo tab ảo ngầm (Proxy: ${proxyUrl || 'Mặc định'})...`);
-          
           let launchOptions = env.MYBROWSER || { headless: true };
           if (proxyUrl) {
             launchOptions.args = [`--proxy-server=${proxyUrl}`, '--no-sandbox', '--disable-setuid-sandbox'];
@@ -52,60 +49,36 @@ export default {
           browser = await puppeteer.launch(launchOptions);
           const page = await browser.newPage();
 
-          // Lắng nghe và gom Console Log từ V7.1.3 gửi về Master Hub
           page.on('console', msg => log(`[V7.1.3 Console] ${msg.text()}`));
 
-          // Cấu hình Mobile Mode giả lập chuẩn
           await page.setUserAgent('Mozilla/5.0 (Linux; Android 13; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36');
           await page.setViewport({ width: 412, height: 915, isMobile: true, hasTouch: true });
 
-          // =========================================================
-          // TIÊM TOÀN BỘ MÃ NGUỒN V7.1.3 VÀO TAB ẢO BẰNG HÀM TRUYỀN THAM SỐ
-          // =========================================================
           await page.evaluateOnNewDocument((user, socketUrl) => {
-              // Ghi đè LocalStorage ngầm định để V7.1.3 tự lấy đúng tên tài khoản
               window.localStorage.setItem('hendy_name', user);
               window.localStorage.setItem('hendy_wsUrl', socketUrl);
-              window.localStorage.setItem('hendy_tabRole', 'FOLLOWER'); // Set mặc định đàn em
+              window.localStorage.setItem('hendy_tabRole', 'FOLLOWER');
               window.localStorage.setItem('hendy_autoDD', 'true');
               window.localStorage.setItem('hendy_autoSend', 'true');
 
-              // --- BẮT ĐẦU MÃ NGUỒN V7.1.3 ---
               (function() {
                   'use strict';
                   if (window.__ULTIMATE_LIVE_PRO__) return;
                   window.__ULTIMATE_LIVE_PRO__ = true;
-                  const w = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
-
-                  console.log(`[HenDy-LIVE-PRO V7.1.3] Khởi động thành công cho tài khoản: ${user}`);
-
+                  console.log(`[HenDy-LIVE-PRO V7.1.3] Active for user: ${user}`);
                   try {
                       if (typeof HTMLMediaElement !== 'undefined' && !HTMLMediaElement.prototype.getStatisticsInfo) {
                           HTMLMediaElement.prototype.getStatisticsInfo = function() { return { speed: 0, decodedFrames: 0, droppedFrames: 0 }; };
                       }
                   } catch(e) {}
-
-                  window.addEventListener('unhandledrejection', function(event) {
-                      if (event.reason && typeof event.reason.message === 'string') {
-                          if (event.reason.message.includes('getStatisticsInfo') || event.reason.message.includes('EarlyEof')) {
-                              event.preventDefault();
-                          }
-                      }
-                  });
-
-                  // ... (Toàn bộ logic Bypass Mobile, WebSocket, Regex Kèo, Chat Injector của bạn nằm ở đây)
-                  // Vì V7.1.3 sẽ tự động đọc cấu hình từ localStorage ở trên, nên nó sẽ vận hành hoàn hảo với username truyền vào!
-                  
               })();
-              // --- KẾT THÚC MÃ NGUỒN V7.1.3 ---
           }, username, wsUrl);
 
           log(`Đang truy cập Web Live: ${link_live}`);
           await page.goto(link_live, { waitUntil: "networkidle0", timeout: 35000 });
 
-          // Xử lý Auto-Login nếu có Password
           if (password) {
-            log(`Phát hiện cấu hình Password, tiến hành Auto-Login...`);
+            log(`Thực hiện Auto-Login...`);
             await page.evaluate((u, p) => {
               const inputs = document.querySelectorAll('input');
               for (let input of inputs) {
@@ -130,7 +103,7 @@ export default {
               }
             });
             await new Promise(r => setTimeout(r, 4000));
-            log(`Hoàn tất Submit Form Đăng nhập.`);
+            log(`Hoàn tất Submit Đăng nhập.`);
           }
 
           log(`Chụp Live Preview tình trạng Tab ẩn...`);
@@ -138,7 +111,7 @@ export default {
           finalScreenshot = `data:image/jpeg;base64,${screenshotBuffer}`;
 
           await browser.close();
-          log(`[Hoàn tất] Đã đóng Tab ảo V7.1.3 an toàn.`);
+          log(`Đã đóng Tab ảo an toàn.`);
 
         } catch (accountErr) {
           if (browser) { try { await browser.close(); } catch(e) {} }
