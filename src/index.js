@@ -40,7 +40,7 @@ export default {
         };
 
         try {
-          log(`Khởi tạo tab ảo ngầm V7.1.5 (Bypass Mobile & Captcha Ready)...`);
+          log(`Khởi tạo tab ảo ngầm cho tài khoản: ${username}`);
           let launchOptions = env.MYBROWSER || { headless: true };
           if (proxyUrl) {
             launchOptions.args = [`--proxy-server=${proxyUrl}`, '--no-sandbox', '--disable-setuid-sandbox'];
@@ -49,7 +49,7 @@ export default {
           browser = await puppeteer.launch(launchOptions);
           const page = await browser.newPage();
 
-          page.on('console', msg => log(`[Browser Console] ${msg.text()}`));
+          page.on('console', msg => log(`[Console] ${msg.text()}`));
 
           const MOBILE_UA = 'Mozilla/5.0 (Linux; Android 13; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36';
           await page.setUserAgent(MOBILE_UA);
@@ -89,29 +89,16 @@ export default {
               } catch (e) {}
 
               try { if (!('ontouchstart' in window)) Object.defineProperty(window, 'ontouchstart', { configurable: true, value: null }); } catch (e) {}
-
-              (function() {
-                  'use strict';
-                  if (window.__ULTIMATE_LIVE_PRO__) return;
-                  window.__ULTIMATE_LIVE_PRO__ = true;
-                  console.log(`[HenDy-V7.1.5] Active for user: ${user}`);
-              })();
           }, username, wsUrl, MOBILE_UA);
 
           log(`Đang truy cập Web Live: ${link_live}`);
           await page.goto(link_live, { waitUntil: "networkidle0", timeout: 35000 });
 
-          // Chờ thêm 3 giây để popup đăng nhập hoặc form render đầy đủ
+          // Chờ popup hoặc form đăng nhập render ra
           await new Promise(r => setTimeout(r, 3000));
 
           if (password) {
-            log(`Phát hiện mật khẩu, tiến hành điền form đăng nhập tự động...`);
-            
-            // Chờ cho ô input xuất hiện trên trang
-            try {
-              await page.waitForSelector('input[type="text"], input[type="password"]', { timeout: 5000 });
-            } catch(e) {}
-
+            log(`Tiến hành tự động điền tài khoản: ${username} và mật khẩu...`);
             await page.evaluate((u, p) => {
               const inputs = document.querySelectorAll('input');
               for (let input of inputs) {
@@ -119,13 +106,13 @@ export default {
                 const name = (input.name || '').toLowerCase();
                 const type = (input.type || '').toLowerCase();
 
-                // Điền tài khoản
+                // Điền đúng tài khoản
                 if (type === 'text' && (placeholder.includes('tài khoản') || placeholder.includes('user') || name.includes('user') || name.includes('account'))) {
                   input.value = u; 
                   input.dispatchEvent(new Event('input', { bubbles: true }));
                   input.dispatchEvent(new Event('change', { bubbles: true }));
                 }
-                // Điền mật khẩu
+                // Điền đúng mật khẩu
                 if (type === 'password' || placeholder.includes('mật khẩu') || name.includes('pass')) {
                   input.value = p; 
                   input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -133,13 +120,10 @@ export default {
                 }
               }
             }, username, password);
-
-            log(`Đã điền xong Tài khoản & Mật khẩu. Đang chờ nhập Captcha...`);
-            // Dừng lại 2 giây để giữ trạng thái form hiển thị rõ mã Captcha trên ảnh chụp màn hình Preview
             await new Promise(r => setTimeout(r, 2000));
           }
 
-          log(`Chụp Live Preview tình trạng Tab ẩn (có hiển thị form Captcha)...`);
+          log(`Chụp ảnh màn hình Preview trạng thái Captcha...`);
           const screenshotBuffer = await page.screenshot({ encoding: "base64", type: "jpeg", quality: 65 });
           finalScreenshot = `data:image/jpeg;base64,${screenshotBuffer}`;
 
@@ -153,7 +137,7 @@ export default {
       }
 
       return new Response(
-        JSON.stringify({ status: "SUCCESS", logs: allExecutionLogs, screenshot: finalScreenshot, log: "Chạy Batch Tab Ảo V7.1.5 hoàn tất." }),
+        JSON.stringify({ status: "SUCCESS", logs: allExecutionLogs, screenshot: finalScreenshot, log: "Chạy Batch Tab Ảo hoàn tất." }),
         { headers: { "content-type": "application/json", "Access-Control-Allow-Origin": "*" } }
       );
 
