@@ -1,7 +1,12 @@
 {
   "name": "hendy-worker",
-  "main": "src/index.js",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
   "dependencies": {
-    "@cloudflare/puppeteer": "latest"
+    "puppeteer": "^22.0.0",
+    "ws": "^8.16.0"
   }
 }
