@@ -40,7 +40,7 @@ export default {
         };
 
         try {
-          log(`Khởi tạo tab ảo ngầm V7.1.5 (Mobile Mode Bypassed)...`);
+          log(`Khởi tạo tab ảo ngầm V7.1.5 (Bypass Mobile & Captcha Ready)...`);
           let launchOptions = env.MYBROWSER || { headless: true };
           if (proxyUrl) {
             launchOptions.args = [`--proxy-server=${proxyUrl}`, '--no-sandbox', '--disable-setuid-sandbox'];
@@ -63,17 +63,31 @@ export default {
               window.localStorage.setItem('hendy_autoSend', 'true');
 
               const fakeNavigator = {
-                  userAgent: ua, platform: 'Android', maxTouchPoints: 5, vendor: 'Google Inc.',
-                  language: 'vi-VN', languages: ['vi-VN', 'vi', 'en-US', 'en'],
-                  hardwareConcurrency: 8, deviceMemory: 8, onLine: true, cookieEnabled: true, webdriver: false,
-                  userAgentData: { brands: [{ brand: 'Chromium', version: '131' }, { brand: 'Google Chrome', version: '131' }], mobile: true, platform: 'Android' }
+                  userAgent: ua,
+                  platform: 'Android',
+                  maxTouchPoints: 5,
+                  vendor: 'Google Inc.',
+                  language: 'vi-VN',
+                  languages: ['vi-VN', 'vi', 'en-US', 'en'],
+                  hardwareConcurrency: 8,
+                  deviceMemory: 8,
+                  onLine: true,
+                  cookieEnabled: true,
+                  webdriver: false,
+                  userAgentData: {
+                      brands: [{ brand: 'Chromium', version: '131' }, { brand: 'Google Chrome', version: '131' }],
+                      mobile: true,
+                      platform: 'Android'
+                  }
               };
+
               try {
                   Object.keys(fakeNavigator).forEach(key => {
                       try { Object.defineProperty(Navigator.prototype, key, { get: () => fakeNavigator[key], configurable: true }); } catch (e) {}
                       try { if (window.navigator) Object.defineProperty(window.navigator, key, { get: () => fakeNavigator[key], configurable: true }); } catch (e) {}
                   });
               } catch (e) {}
+
               try { if (!('ontouchstart' in window)) Object.defineProperty(window, 'ontouchstart', { configurable: true, value: null }); } catch (e) {}
 
               (function() {
@@ -86,59 +100,46 @@ export default {
 
           log(`Đang truy cập Web Live: ${link_live}`);
           await page.goto(link_live, { waitUntil: "networkidle0", timeout: 35000 });
-          await new Promise(r => setTimeout(r, 2500));
+
+          // Chờ thêm 3 giây để popup đăng nhập hoặc form render đầy đủ
+          await new Promise(r => setTimeout(r, 3000));
 
           if (password) {
-            log(`Thực hiện Auto-Login & Xử lý Captcha...`);
+            log(`Phát hiện mật khẩu, tiến hành điền form đăng nhập tự động...`);
             
-            // Tự động điền tài khoản, mật khẩu và quét mã Captcha hiển thị trên form
+            // Chờ cho ô input xuất hiện trên trang
+            try {
+              await page.waitForSelector('input[type="text"], input[type="password"]', { timeout: 5000 });
+            } catch(e) {}
+
             await page.evaluate((u, p) => {
-              // 1. Điền thông tin tài khoản và mật khẩu
               const inputs = document.querySelectorAll('input');
               for (let input of inputs) {
-                const type = (input.type || '').toLowerCase();
-                const name = (input.name || '').toLowerCase();
                 const placeholder = (input.placeholder || '').toLowerCase();
-                
-                if (type === 'text' || name.includes('user') || name.includes('account') || placeholder.includes('tài khoản')) {
-                  input.value = u; input.dispatchEvent(new Event('input', { bubbles: true }));
-                }
-                if (type === 'password' || name.includes('pass') || placeholder.includes('mật khẩu')) {
-                  input.value = p; input.dispatchEvent(new Event('input', { bubbles: true }));
-                }
-              }
+                const name = (input.name || '').toLowerCase();
+                const type = (input.type || '').toLowerCase();
 
-              // 2. Tự động tìm và bóc tách chuỗi mã Captcha nếu hiển thị dạng text/element trên giao diện form
-              let captchaInput = document.querySelector('input[name*="captcha" i], input[id*="captcha" i], input[placeholder*="mã" i]');
-              if (captchaInput) {
-                // Thử tìm xem mã captcha có đang hiển thị dạng text trên thẻ con hoặc background không
-                let codeContainer = document.querySelector('.captcha-code, .code-text, canvas, img[src*="captcha"]');
-                // Nếu nhà cái thiết lập mã hiện ngay trên khung (như hình QHBW), có thể đọc thuộc tính hoặc text nội bộ
-                if (codeContainer && codeContainer.innerText) {
-                   captchaInput.value = codeContainer.innerText.trim();
-                   captchaInput.dispatchEvent(new Event('input', { bubbles: true }));
+                // Điền tài khoản
+                if (type === 'text' && (placeholder.includes('tài khoản') || placeholder.includes('user') || name.includes('user') || name.includes('account'))) {
+                  input.value = u; 
+                  input.dispatchEvent(new Event('input', { bubbles: true }));
+                  input.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                // Điền mật khẩu
+                if (type === 'password' || placeholder.includes('mật khẩu') || name.includes('pass')) {
+                  input.value = p; 
+                  input.dispatchEvent(new Event('input', { bubbles: true }));
+                  input.dispatchEvent(new Event('change', { bubbles: true }));
                 }
               }
             }, username, password);
 
-            await new Promise(r => setTimeout(r, 1000));
-
-            // Click nút Đăng nhập
-            await page.evaluate(() => {
-              const buttons = document.querySelectorAll('button, input[type="submit"]');
-              for (let btn of buttons) {
-                const txt = btn.textContent.toLowerCase() || btn.value.toLowerCase();
-                if (txt.includes('đăng nhập') || txt.includes('login') || txt.includes('vào')) {
-                  btn.click(); break;
-                }
-              }
-            });
-
-            await new Promise(r => setTimeout(r, 4000));
-            log(`Hoàn tất quy trình Auto-Login.`);
+            log(`Đã điền xong Tài khoản & Mật khẩu. Đang chờ nhập Captcha...`);
+            // Dừng lại 2 giây để giữ trạng thái form hiển thị rõ mã Captcha trên ảnh chụp màn hình Preview
+            await new Promise(r => setTimeout(r, 2000));
           }
 
-          log(`Chụp Live Preview tình trạng Tab ẩn...`);
+          log(`Chụp Live Preview tình trạng Tab ẩn (có hiển thị form Captcha)...`);
           const screenshotBuffer = await page.screenshot({ encoding: "base64", type: "jpeg", quality: 65 });
           finalScreenshot = `data:image/jpeg;base64,${screenshotBuffer}`;
 
