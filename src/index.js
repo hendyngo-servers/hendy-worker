@@ -40,7 +40,7 @@ export default {
         };
 
         try {
-          log(`Khởi tạo tab ảo ngầm (Proxy: ${proxyUrl || 'Mặc định'})...`);
+          log(`Khởi tạo tab ảo ngầm V7.1.5 (Proxy: ${proxyUrl || 'Mặc định'})...`);
           let launchOptions = env.MYBROWSER || { headless: true };
           if (proxyUrl) {
             launchOptions.args = [`--proxy-server=${proxyUrl}`, '--no-sandbox', '--disable-setuid-sandbox'];
@@ -49,15 +49,16 @@ export default {
           browser = await puppeteer.launch(launchOptions);
           const page = await browser.newPage();
 
-          page.on('console', msg => log(`[V7.1.3 Console] ${msg.text()}`));
+          page.on('console', msg => log(`[V7.1.5 Console] ${msg.text()}`));
 
           await page.setUserAgent('Mozilla/5.0 (Linux; Android 13; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36');
           await page.setViewport({ width: 412, height: 915, isMobile: true, hasTouch: true });
 
+          // Tiêm trọn vẹn bộ cấu hình và logic V7.1.5 vào document-start của tab ảo
           await page.evaluateOnNewDocument((user, socketUrl) => {
               window.localStorage.setItem('hendy_name', user);
-              window.localStorage.setItem('hendy_wsUrl', socketUrl);
-              window.localStorage.setItem('hendy_tabRole', 'FOLLOWER');
+              window.localStorage.setItem('mc_ws_url', socketUrl);
+              window.localStorage.setItem('hendy_tabRole', 'LEADER');
               window.localStorage.setItem('hendy_autoDD', 'true');
               window.localStorage.setItem('hendy_autoSend', 'true');
 
@@ -65,7 +66,7 @@ export default {
                   'use strict';
                   if (window.__ULTIMATE_LIVE_PRO__) return;
                   window.__ULTIMATE_LIVE_PRO__ = true;
-                  console.log(`[HenDy-LIVE-PRO V7.1.3] Active for user: ${user}`);
+                  console.log(`[HenDy-LIVE-PRO V7.1.5] Active for user: ${user}`);
                   try {
                       if (typeof HTMLMediaElement !== 'undefined' && !HTMLMediaElement.prototype.getStatisticsInfo) {
                           HTMLMediaElement.prototype.getStatisticsInfo = function() { return { speed: 0, decodedFrames: 0, droppedFrames: 0 }; };
@@ -78,7 +79,7 @@ export default {
           await page.goto(link_live, { waitUntil: "networkidle0", timeout: 35000 });
 
           if (password) {
-            log(`Thực hiện Auto-Login...`);
+            log(`Thực hiện Auto-Login cho tài khoản...`);
             await page.evaluate((u, p) => {
               const inputs = document.querySelectorAll('input');
               for (let input of inputs) {
@@ -120,7 +121,7 @@ export default {
       }
 
       return new Response(
-        JSON.stringify({ status: "SUCCESS", logs: allExecutionLogs, screenshot: finalScreenshot, log: "Chạy Batch Tab Ảo V7.1.3 hoàn tất." }),
+        JSON.stringify({ status: "SUCCESS", logs: allExecutionLogs, screenshot: finalScreenshot, log: "Chạy Batch Tab Ảo V7.1.5 hoàn tất." }),
         { headers: { "content-type": "application/json", "Access-Control-Allow-Origin": "*" } }
       );
 
