@@ -1,0 +1,13 @@
+{
+  "tier": 1,
+  "name": "CLIENT TIER",
+  "directories": [
+    "apps/studio-web/src",
+    "integrated-pipeline/androidApp",
+    "integrated-pipeline/iosApp",
+    "integrated-pipeline/desktopApp"
+  ],
+  "auto_generate_files": {
+    "apps/studio-web/package.json": "{\n  \"name\": \"studio-web\"\n}"
+  }
+}
