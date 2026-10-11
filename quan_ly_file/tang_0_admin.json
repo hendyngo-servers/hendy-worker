@@ -1,0 +1,13 @@
+{
+  "tier": 0,
+  "name": "MẶT PHẲNG QUẢN TRỊ & VẬN HÀNH (ADMIN CONTROL PLANE)",
+  "directories": [
+    "apps/admin-web/src",
+    "infrastructure",
+    ".github/workflows"
+  ],
+  "auto_generate_files": {
+    "apps/admin-web/package.json": "{\n  \"name\": \"admin-web\",\n  \"version\": \"1.0.0\"\n}",
+    "infrastructure/docker-compose.yml": "version: '3.8'\nservices:\n  admin-panel:\n    image: node:alpine"
+  }
+}
