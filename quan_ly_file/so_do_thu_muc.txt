@@ -1,0 +1,46 @@
+thư mục gốc/
+├── .github/
+│ └── quy trình làm việc/
+│ ├── release-master.yml # Đường dẫn CI/CD chính (Xây dựng, Kiểm thử, Triển khai đa nền tảng)
+│ ├── deploy-cloudflare.yml # Triển khai tự động Cloudflare Workers & Pages
+│ └── mobile-native-build.yml # Tích hợp Fastlane cho Android (.aab/.apk) & iOS (.ipa)
+│
+├── apps/ # [TẦNG 0 & TẦNG 1] TÁCH BIỆT HOÀN TOÀN GIAO DIỆN
+│ ├── admin-web/ # [TẦNG 0] Ứng dụng quản trị độc lập (admin.hendystudio.net)
+│ │ ├── src/ # Chứa mã nguồn DockerKtorWorkspace & hệ thống quản trị
+│ │ └── package.json
+│ │
+│ └── studio-web/ # [TẦNG 1] Ứng dụng User độc lập (https://hendy-video-studio-new-pro.onrender.com)
+│ ├── src/ # Chứa StudioWorkspace, StudioHomePage, VideoPlayer, SubtitleList
+│ └── package.json
+│
+├── gói/ #MÃ NGUỒN DÙNG CHUNG (Tối ưu tái sử dụng)
+│ ├── ui-comComponents/ # Thư viện UI, Player, Subtitle dùng chung cho các ứng dụng
+│ └── core-utils/ #Ức ích chung, hỗ trợ chức năng
+│
+├── integrated-pipeline/ # [TẦNG 1, 4, 5] ĐƯỜNG ỐNG TÍCH HỢP ĐA NỀN TẢNG (KMP & CÁC TÁC NHÂN)
+│ ├── androidApp/ # Trình khởi chạy ứng dụng Android gốc (Media3 ExoPlayer)
+│ ├── iosApp/ # Trình khởi chạy ứng dụng iOS gốc (Swift & AVKit AVPlayer)
+│ ├── desktopApp/ # Ứng dụng máy tính để bàn JVM gốc (Compose Desktop)
+│ ├── composeApp/ # Mô-đun giao diện người dùng đa nền tảng Compose dùng chung
+│ ├── core/ # Lớp logic nghiệp vụ cốt lõi KMP đa nền tảng
+│ ├── server/ # [TẦNG 4] BACKEND ENGINE (Kotlin / Ktor & Express Gateway)
+│ │ ├── config/, pipeline/, routes/ # Các điểm cuối API REST (SubtitleRoutes, RenderRoutes, BotTrigger)
+│ │ ├── bảo mật/ #Xác thực & RBAC (Auth, EdgeOtpAuthenticator)
+│ │ └── service/ # Các dịch vụ cốt lõi (AiService Gemini, FFmpegService, WhisperService)
+│ ├── pipeline-agent/ # [TẦNG 5] CÁC CÔNG VIỆC NỀN (Python/TypeScript: Whisper, Scraper)
+│ ├── pipe-ui/ #Giao diện giám sát quá trình công việc thực tế
+│ └── cloudflare/ # [TẦNG 3] Cloudflare Workers (telegramBot.ts, r2Storage.ts)
+│
+├── cơ sở dữ liệu/ # [TẦNG 6] QUẢN LÝ CƠ SỞ DỮ LIỆU & ERD
+│ ├── postgres-rbac/ # Di chuyển: người dùng, vai trò, quyền hạn, nhật ký kiểm toán (RBAC)
+│ └── mongo-projects/ # Schema NoSQL lưu trữ Dòng thời gian và trạng thái dự án
+│
+├── storage/ # [TẦNG 6] KẾT NỐI ĐỐI TƯỢNG LƯU TRỮ (AWS S3 / Cloudflare R2)
+├── cơ sở hạ tầng/ # [TẦNG 0] Cấu hình Docker, Kubernetes, Giám sát (ELK, Grafana)
+│
+├── package.json # Khai báo Monorepo Workspaces (Bun/NPM)
+├── bun.lock #Khóa phiên bản gói phụ thuộc Bun
+├── Dockerfile # Dockerfile tích hợp nhiều giai đoạn (Máy chủ Ktor + Tác nhân Python)
+├── docker-compose.yml # Cấu hình sản xuất (PostgreSQL, Redis, Ktor Server, Pipeline Agents)
+└── render.yaml # [RENDER CONFIG] Định nghĩa cấu hình triển khai Web Studio lên Render
