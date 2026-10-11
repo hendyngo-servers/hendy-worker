@@ -1,0 +1,9 @@
+{
+  "tier": 2,
+  "name": "FRONTEND ENGINE",
+  "directories": [
+    "packages/ui-components",
+    "packages/core-utils"
+  ],
+  "auto_generate_files": {}
+}
