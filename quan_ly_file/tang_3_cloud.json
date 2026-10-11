@@ -1,0 +1,11 @@
+{
+  "tier": 3,
+  "name": "CLOUD EDGE",
+  "directories": [
+    "integrated-pipeline/cloudflare"
+  ],
+  "auto_generate_files": {
+    "integrated-pipeline/cloudflare/telegramBot.ts": "// Cloudflare Worker cho Telegram Bot\n",
+    "integrated-pipeline/cloudflare/r2Storage.ts": "// Cloudflare R2 Storage Logic\n"
+  }
+}
