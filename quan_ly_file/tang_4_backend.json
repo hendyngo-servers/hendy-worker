@@ -1,0 +1,12 @@
+{
+  "tier": 4,
+  "name": "BACKEND ORCHESTRATION",
+  "directories": [
+    "integrated-pipeline/server/config",
+    "integrated-pipeline/server/pipeline",
+    "integrated-pipeline/server/routes",
+    "integrated-pipeline/server/security",
+    "integrated-pipeline/server/service"
+  ],
+  "auto_generate_files": {}
+}
