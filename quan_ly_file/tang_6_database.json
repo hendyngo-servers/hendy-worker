@@ -1,0 +1,12 @@
+{
+  "tier": 6,
+  "name": "DATA & STORAGE TIER",
+  "directories": [
+    "databases/postgres-rbac",
+    "databases/mongo-projects",
+    "storage"
+  ],
+  "auto_generate_files": {
+    "databases/postgres-rbac/schema.sql": "-- Bảng USERS\nCREATE TABLE users (id SERIAL PRIMARY KEY, email VARCHAR(255));\n-- Bảng ROLES\nCREATE TABLE roles (id SERIAL PRIMARY KEY, name VARCHAR(50));"
+  }
+}
