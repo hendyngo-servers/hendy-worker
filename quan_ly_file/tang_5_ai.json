@@ -1,0 +1,9 @@
+{
+  "tier": 5,
+  "name": "AI & WORKERS",
+  "directories": [
+    "integrated-pipeline/pipeline-agent",
+    "integrated-pipeline/pipe-ui"
+  ],
+  "auto_generate_files": {}
+}
